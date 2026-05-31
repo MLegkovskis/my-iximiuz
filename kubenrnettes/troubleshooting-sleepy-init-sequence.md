@@ -26,15 +26,22 @@ kubectl get pod sleepy -n challenge -o yaml
 **What this revealed:**
 ```yaml
 spec:
-  restartPolicy: Never           # First red flag
+  restartPolicy: Never           # First red flag - explicitly set!
   initContainers:
-  - name: sleepy-sidecar
-    restartPolicy: Always        # Native sidecar attempt
+  - image: ghcr.io/iximiuz/labs/kubernetes-native-sidecars/sleepy-sidecar:v1.0.0
+    name: sleepy-sidecar
+    restartPolicy: Always        # Native sidecar
   containers:
-  - name: app
+  - image: ghcr.io/iximiuz/labs/kubernetes-native-sidecars/app:v1.0.0
+    name: app
 ```
 
 **Why this mattered:** The pod had `restartPolicy: Never` but contained a native sidecar that needed to keep running. This mismatch was a key clue.
+
+**Critical detail:** The `restartPolicy: Never` was **explicitly set** in the original Pod spec, not a default. This is important because:
+- Default would be `Always` if not specified
+- The challenge **intentionally set it to `Never`** to create the problem
+- Native sidecars with `restartPolicy: Always` **don't work properly** when pod-level policy is `Never`
 
 ---
 
